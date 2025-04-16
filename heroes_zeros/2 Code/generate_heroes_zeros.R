@@ -153,13 +153,15 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
       color = rating_group
     ),
     size = 3.5,
-    nudge_y = rep(c(0.3, -0.3), length.out = nrow(labelled_players)),
-    direction = "y",
-    force = 2,
+    nudge_y = rep(c(0.15, -0.15), length.out = nrow(labelled_players)),
+    #nudge_x = rep(c(0.3, -0.3), length.out = nrow(labelled_players)),
+    direction = "both",
+    force = 5,
     force_pull = 0.01,
-    box.padding = 0.15,
-    point.padding = 0.1,
+    box.padding = 0.05,
+    point.padding = 0.05,
     max.overlaps = 100,
+    max.iter = 8000,
     segment.color = ifelse(
       labelled_players$rating_group == "Top 5", "#0E6ECE",
       ifelse(labelled_players$rating_group == "Bottom 5", "#F56580", "#BCBFBE")
@@ -170,8 +172,8 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
     segment.curvature = 0,
     min.segment.length = 0,
     inherit.aes = FALSE
-  )+
-  scale_y_continuous(NULL, breaks = NULL, limits = c(-0.5, 0.5)) +
+  ) +
+  scale_y_continuous(NULL, breaks = NULL, limits = c(-.5, .5)) +
   scale_color_manual(values = c("Top 5" = "#0E6ECE", "Bottom 5" = "#F56580", "Other" = "#BCBFBE")) +
   labs(
     title = paste("Heroes and Zeros – Round", str_sub(round_to_analyse, 5, 6)),
