@@ -263,7 +263,8 @@ swarm_plot_w_labels <- swarm_plot +
     size = 8,
     lineheight = 0.5,
     family = "roboto",
-    inherit.aes = FALSE
+    inherit.aes = FALSE,
+    color = labelled_players$segment_colour,  
   ) +
   geom_curve(
     data = labelled_players,
@@ -278,6 +279,6 @@ swarm_plot_w_labels <- swarm_plot +
     size = 0.6,
     colour = labelled_players$segment_colour,
     inherit.aes = FALSE
-  ) + scale_colour_identity()
+  )
 
 print(swarm_plot_w_labels)
