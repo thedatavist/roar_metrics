@@ -14,7 +14,14 @@ library(writexl)
 library(ggbeeswarm)
 library(packcircles)
 library(ggrepel)
+library(showtext)
+library(ggtext)
 library(fitzRoy)
+
+#### Fonts
+font_add_google("Roboto", "roboto")
+font_add_google("Poppins", "poppins")
+showtext_auto()
 
 ### Constants and variable initialisation
 round_to_analyse = 202505
@@ -182,24 +189,28 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
   scale_fill_manual(values = rating_colors) +
   scale_color_manual(values = rating_colors) +
   labs(
-    title = paste("Heroes and Zeros – Round", str_sub(round_to_analyse, 5, 6)),
-    subtitle = paste("Player Ratings –", str_sub(round_to_analyse, 1, 4)),
+    title = "<b>Footy Heroes and Zeros</b> <span style='font-weight:300;'>| AFL 2025, Round 5</span>",
+    subtitle = "‘Beeswarm’ distribution of <b>AFL player ratings</b> (at least 25% game time), highlighting the <span style='color:#0E6ECE; font-weight:700;'>top 5</span> and <span style='color:#F56580; font-weight:700;'>bottom 5</span> of the round.",
     x = "Player Rating Points",
     color = NULL
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_family = "roboto", base_size = 24) +
   theme(
     legend.position = "none",
-    plot.title = element_text(face = "bold"),
     axis.text.y = element_blank(),
-    axis.text.x = element_text(size = 10),
-    axis.title.x = element_text(size = 10),
+    axis.text.x = element_text(size = 18),
+    axis.title.x = element_text(size = 18),
     panel.grid.major.y = element_blank(),
     panel.grid.minor.y = element_blank(),
-    panel.grid.major.x = element_line(linewidth = 0.3, linetype = "dotted", colour = "#898989")
+    panel.grid.major.x = element_line(linewidth = 0.3, linetype = "dotted", colour = "#898989"),
+    plot.background = element_rect(fill = "#f5f5f5", colour = NA),
+    panel.background = element_rect(fill = "#f5f5f5", colour = NA),
+    plot.margin = margin(t = 30, r = 40, b = 30, l = 40),
+    plot.title = ggtext::element_markdown(size = 44, family = "poppins", margin = margin(b = 6)),
+    plot.subtitle = ggtext::element_markdown(size = 28, family = "roboto", margin = margin(b = 30)),
+    
   ) + 
   coord_cartesian(xlim = c(x_min, x_max))
-
 
 #Add repelled labels
 
@@ -217,9 +228,9 @@ swarm_plot_w_labels <- swarm_plot +
     direction = "y",
     min.segment.length = 0,
     segment.size = 0.6,
-    segment.curvature = 0.25,
+  #  segment.curvature = 0.5,
     segment.ncp = 3,
-    size = 3.1,
+    size = 6,
     box.padding = 0.3,
     point.padding = 1.5,
     arrow = arrow(length = unit(0.01, "npc"), type = "open"),
@@ -234,6 +245,7 @@ print(swarm_plot_w_labels)
 
 
 ### Outputs
+ggsave("plot.png", plot = swarm_plot_w_labels, width = 10, height = 6, dpi = 200)
 
 
 
