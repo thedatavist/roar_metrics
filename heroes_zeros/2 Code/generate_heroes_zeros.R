@@ -158,6 +158,10 @@ labelled_players <- beeswarm_player_stats %>%
     )
   )
 
+# Calculate axis range snapped to nearest 5s
+x_min <- floor(min(beeswarm_player_stats$ratingPoints, na.rm = TRUE) / 5) * 5
+x_max <- ceiling(max(beeswarm_player_stats$ratingPoints, na.rm = TRUE) / 5) * 5
+
 
 swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour = rating_group)) +
   geom_quasirandom(
@@ -172,6 +176,8 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
     shape = 21
   ) +
   scale_y_continuous(NULL, breaks = NULL, limits = c(-.5, .5)) +
+  scale_x_continuous(breaks = seq(x_min, x_max, by = 5),
+                     minor_breaks = NULL) +
   scale_fill_manual(values = rating_colors) +
   scale_color_manual(values = rating_colors) +
   labs(
@@ -187,7 +193,11 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
     axis.text.y = element_blank(),
     panel.grid.major.y = element_blank(),
     panel.grid.minor.y = element_blank()
-  )
+  ) + 
+  coord_cartesian(xlim = c(x_min, x_max))
+
+
+#Add repelled labels
 
 swarm_plot_w_labels <- swarm_plot +
   geom_text_repel(
@@ -211,6 +221,7 @@ swarm_plot_w_labels <- swarm_plot +
     arrow = arrow(length = unit(0.01, "npc"), type = "open"),
     inherit.aes = FALSE
   )
+
 
 
 
