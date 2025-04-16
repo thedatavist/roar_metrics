@@ -136,36 +136,56 @@ beeswarm_player_stats <- relevant_player_stats %>%
 
 ### Charts
 
+rating_colors <- c(
+  "Top 5" = "#0E6ECE",
+  "Bottom 5" = "#F56580",
+  "Other" = "#BCBFBE"
+)
+
 # Beeswarm chart
+labelled_players <- beeswarm_player_stats %>%
+  filter(rating_group != "Other") %>%
+  mutate(
+    y_position = rep(c(0.15, -0.15), length.out = n()),
+    label_color = case_when(
+      rating_group == "Top 5" ~ "#0E6ECE",
+      rating_group == "Bottom 5" ~ "#F56580",
+      TRUE ~ "#BCBFBE"
+    ),
+    segment_color = label_color
+  )
+
+
+
 swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour = rating_group)) +
   geom_quasirandom(
+    aes(fill = rating_group, 
+        colour = rating_group,
+        alpha = I(0.5)
+    ),
     method = "quasirandom",
     width = 0.3,
     size = 4,
-    alpha = 0.85
+    stroke = 1,
+    shape = 21
   ) +
   geom_text_repel(
     data = labelled_players,
     aes(
       x = ratingPoints,
-      y = 0,
+      y = y_position,  # manual y placement
       label = player.fullName,
       color = rating_group
     ),
     size = 3.5,
-    nudge_y = rep(c(0.15, -0.15), length.out = nrow(labelled_players)),
-    #nudge_x = rep(c(0.3, -0.3), length.out = nrow(labelled_players)),
-    direction = "both",
-    force = 5,
+    direction = "y",        # only up/down
+    nudge_y = 0,            # no auto nudge
+    force = 1,
     force_pull = 0.01,
     box.padding = 0.05,
     point.padding = 0.05,
     max.overlaps = 100,
-    max.iter = 8000,
-    segment.color = ifelse(
-      labelled_players$rating_group == "Top 5", "#0E6ECE",
-      ifelse(labelled_players$rating_group == "Bottom 5", "#F56580", "#BCBFBE")
-    ),
+    segment.color = labelled_players$segment_color,
     segment.linetype = "dashed",
     segment.size = 0.15,
     segment.alpha = 0.7,
@@ -174,7 +194,8 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
     inherit.aes = FALSE
   ) +
   scale_y_continuous(NULL, breaks = NULL, limits = c(-.5, .5)) +
-  scale_color_manual(values = c("Top 5" = "#0E6ECE", "Bottom 5" = "#F56580", "Other" = "#BCBFBE")) +
+  scale_fill_manual(values = rating_colors) +
+  scale_color_manual(values = rating_colors) +
   labs(
     title = paste("Heroes and Zeros – Round", str_sub(round_to_analyse, 5, 6)),
     subtitle = paste("Player Ratings –", str_sub(round_to_analyse, 1, 4)),
