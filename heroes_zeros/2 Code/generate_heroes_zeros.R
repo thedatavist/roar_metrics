@@ -167,7 +167,7 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
   geom_quasirandom(
     aes(fill = rating_group, 
         colour = rating_group,
-        alpha = I(0.5)
+        alpha = I(0.75)
     ),
     method = "quasirandom",
     width = 0.3,
@@ -177,7 +177,8 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
   ) +
   scale_y_continuous(NULL, breaks = NULL, limits = c(-.5, .5)) +
   scale_x_continuous(breaks = seq(x_min, x_max, by = 5),
-                     minor_breaks = NULL) +
+                     minor_breaks = NULL,
+                     position = "top") +
   scale_fill_manual(values = rating_colors) +
   scale_color_manual(values = rating_colors) +
   labs(
@@ -191,8 +192,11 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
     legend.position = "none",
     plot.title = element_text(face = "bold"),
     axis.text.y = element_blank(),
+    axis.text.x = element_text(size = 10),
+    axis.title.x = element_text(size = 10),
     panel.grid.major.y = element_blank(),
-    panel.grid.minor.y = element_blank()
+    panel.grid.minor.y = element_blank(),
+    panel.grid.major.x = element_line(linewidth = 0.3, linetype = "dotted", colour = "#898989")
   ) + 
   coord_cartesian(xlim = c(x_min, x_max))
 
@@ -215,7 +219,7 @@ swarm_plot_w_labels <- swarm_plot +
     segment.size = 0.6,
     segment.curvature = 0.25,
     segment.ncp = 3,
-    size = 2.8,
+    size = 3.1,
     box.padding = 0.3,
     point.padding = 1.5,
     arrow = arrow(length = unit(0.01, "npc"), type = "open"),
