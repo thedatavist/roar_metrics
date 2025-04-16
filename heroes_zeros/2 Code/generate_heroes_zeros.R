@@ -198,8 +198,8 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
   theme(
     legend.position = "none",
     axis.text.y = element_blank(),
-    axis.text.x = element_text(size = 18),
-    axis.title.x = element_text(size = 18),
+    axis.text.x = element_text(size = 24),
+    axis.title.x.top = element_text(size = 24, margin = margin(b = 10)),
     panel.grid.major.y = element_blank(),
     panel.grid.minor.y = element_blank(),
     panel.grid.major.x = element_line(linewidth = 0.3, linetype = "dotted", colour = "#898989"),
@@ -208,7 +208,6 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
     plot.margin = margin(t = 30, r = 40, b = 30, l = 40),
     plot.title = ggtext::element_markdown(size = 44, family = "poppins", margin = margin(b = 6)),
     plot.subtitle = ggtext::element_markdown(size = 28, family = "roboto", margin = margin(b = 30)),
-    
   ) + 
   coord_cartesian(xlim = c(x_min, x_max))
 
@@ -226,27 +225,59 @@ swarm_plot_w_labels <- swarm_plot +
     color = labelled_players$segment_colour,       # ✅ text color outside aes
     nudge_y = labelled_players$y_position * 0.5,
     direction = "y",
+    force = 2,
     min.segment.length = 0,
     segment.size = 0.6,
-  #  segment.curvature = 0.5,
     segment.ncp = 3,
-    size = 6,
-    box.padding = 0.3,
-    point.padding = 1.5,
-    arrow = arrow(length = unit(0.01, "npc"), type = "open"),
+    size = 8,
+    lineheight = 0.5,
+    box.padding = 1.5,
+    point.padding = 3,
+   # arrow = arrow(length = unit(0.01, "npc"), type = "open"),
     inherit.aes = FALSE
   )
 
-
-
-
 print(swarm_plot_w_labels)
 
-
-
 ### Outputs
-ggsave("plot.png", plot = swarm_plot_w_labels, width = 10, height = 6, dpi = 200)
+ggsave(
+  filename = paste0("heroes_zeros_", round_to_analyse, ".png"),
+  plot = swarm_plot_w_labels,
+  width = 10,
+  height = 6,
+  dpi = 300
+)
 
 
+### ALT
 
-### Outputs
+swarm_plot_w_labels <- swarm_plot +
+  geom_text(
+    data = labelled_players,
+    aes(
+      x = ratingPoints, 
+      y = y_position * 0.5, 
+      label = label_text,
+      colour = segment_colour       # ✅ inside aes, maps per row
+    ),
+    size = 8,
+    lineheight = 0.5,
+    family = "roboto",
+    inherit.aes = FALSE
+  ) +
+  geom_curve(
+    data = labelled_players,
+    aes(
+      x = ratingPoints,
+      y = y_position * 0.5 - sign(y_position) * 0.05,  # ✅ move start point outside label
+      xend = ratingPoints,
+      yend = 0 + sign(y_position) * 0.025 
+    ),
+    curvature = 0.25,
+    arrow = arrow(length = unit(0.01, "npc"), type = "open"),
+    size = 0.6,
+    colour = labelled_players$segment_colour,
+    inherit.aes = FALSE
+  ) + scale_colour_identity()
+
+print(swarm_plot_w_labels)
