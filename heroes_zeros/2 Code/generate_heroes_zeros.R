@@ -136,25 +136,27 @@ beeswarm_player_stats <- relevant_player_stats %>%
 
 ### Charts
 
-rating_colors <- c(
+rating_colours <- c(
   "Top 5" = "#0E6ECE",
   "Bottom 5" = "#F56580",
   "Other" = "#BCBFBE"
 )
 
 # Beeswarm chart
+# Label top and bottom rated players for annotation
 labelled_players <- beeswarm_player_stats %>%
-  filter(rating_group != "Other") %>%
+  filter(
+    rating_rank == 1 | rating_rank == max(rating_rank)  # Top 1 and Bottom 1
+  ) %>%
   mutate(
-    y_position = rep(c(0.15, -0.15), length.out = n()),
-    label_color = case_when(
-      rating_group == "Top 5" ~ "#0E6ECE",
+    y_position = c(0.3, -0.3),  # Position label above (top) and below (bottom)
+    label_text = paste0(player.fullName, "\n", sprintf("%.1f", ratingPoints)),  # Label with name + rating
+    segment_colour = case_when(
+      rating_group == "Top 5"    ~ "#0E6ECE",
       rating_group == "Bottom 5" ~ "#F56580",
-      TRUE ~ "#BCBFBE"
-    ),
-    segment_color = label_color
+      TRUE                       ~ "#BCBFBE"
+    )
   )
-
 
 
 swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour = rating_group)) +
@@ -168,30 +170,6 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
     size = 4,
     stroke = 1,
     shape = 21
-  ) +
-  geom_text_repel(
-    data = labelled_players,
-    aes(
-      x = ratingPoints,
-      y = y_position,  # manual y placement
-      label = player.fullName,
-      color = rating_group
-    ),
-    size = 3.5,
-    direction = "y",        # only up/down
-    nudge_y = 0,            # no auto nudge
-    force = 1,
-    force_pull = 0.01,
-    box.padding = 0.05,
-    point.padding = 0.05,
-    max.overlaps = 100,
-    segment.color = labelled_players$segment_color,
-    segment.linetype = "dashed",
-    segment.size = 0.15,
-    segment.alpha = 0.7,
-    segment.curvature = 0,
-    min.segment.length = 0,
-    inherit.aes = FALSE
   ) +
   scale_y_continuous(NULL, breaks = NULL, limits = c(-.5, .5)) +
   scale_fill_manual(values = rating_colors) +
@@ -211,7 +189,32 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
     panel.grid.minor.y = element_blank()
   )
 
-print(swarm_plot)
+swarm_plot_w_labels <- swarm_plot +
+  geom_text_repel(
+    data = labelled_players,
+    aes(
+      x = ratingPoints,
+      y = 0,
+      label = label_text,
+      segment.colour = segment_colour  # line only
+    ),
+    color = labelled_players$segment_colour,       # ✅ text color outside aes
+    nudge_y = labelled_players$y_position * 0.5,
+    direction = "y",
+    min.segment.length = 0,
+    segment.size = 0.6,
+    segment.curvature = 0.25,
+    segment.ncp = 3,
+    size = 2.8,
+    box.padding = 0.3,
+    point.padding = 1.5,
+    arrow = arrow(length = unit(0.01, "npc"), type = "open"),
+    inherit.aes = FALSE
+  )
+
+
+
+print(swarm_plot_w_labels)
 
 
 
