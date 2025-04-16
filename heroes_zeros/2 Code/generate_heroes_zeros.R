@@ -146,18 +146,31 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
   ) +
   geom_text_repel(
     data = labelled_players,
-    aes(x = ratingPoints, y = 0, label = player.fullName, colour = rating_group),
-    inherit.aes = FALSE,
+    aes(
+      x = ratingPoints,
+      y = 0,
+      label = player.fullName,
+      color = rating_group
+    ),
     size = 3.5,
-    segment.color = "grey50",
-    segment.linetype = "dashed",
+    nudge_y = rep(c(0.3, -0.3), length.out = nrow(labelled_players)),
     direction = "y",
-    nudge_y = labelled_players$nudge_y,
-    force = 1.5,
-    box.padding = 0.2,
-    point.padding = 0.15,
-    max.overlaps = 100
-  ) +
+    force = 2,
+    force_pull = 0.01,
+    box.padding = 0.15,
+    point.padding = 0.1,
+    max.overlaps = 100,
+    segment.color = ifelse(
+      labelled_players$rating_group == "Top 5", "#0E6ECE",
+      ifelse(labelled_players$rating_group == "Bottom 5", "#F56580", "#BCBFBE")
+    ),
+    segment.linetype = "dashed",
+    segment.size = 0.15,
+    segment.alpha = 0.7,
+    segment.curvature = 0,
+    min.segment.length = 0,
+    inherit.aes = FALSE
+  )+
   scale_y_continuous(NULL, breaks = NULL, limits = c(-0.5, 0.5)) +
   scale_color_manual(values = c("Top 5" = "#0E6ECE", "Bottom 5" = "#F56580", "Other" = "#BCBFBE")) +
   labs(
