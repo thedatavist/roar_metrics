@@ -16,81 +16,15 @@ library(packcircles)
 library(ggrepel)
 library(showtext)
 library(ggtext)
+library(grid)
+library(gridExtra)
 library(fitzRoy)
 
 #### Fonts
 font_add_google("Roboto", "roboto")
 font_add_google("Poppins", "poppins")
-showtext_auto()
-
-### Constants and variable initialisation
-round_to_analyse = 202505
-seasons <- 2025 # Can make this a spread of seasons using 2016:2025
-player_stats <- data.frame() # Initialize an empty data frame to store results
-
-### Data Ingestion
-
-# Loop through each season and fetch player stats
-for (season in seasons) {
-  cat("Fetching data for season:", season, "\n")  # Print progress
-  
-  # Fetch player stats for the given season
-  season_stats <- fetch_player_stats_afl(season = season)
-  
-  # Combine with the main dataset
-  player_stats <- bind_rows(player_stats, season_stats)
-}
-
-
-### Preparation
-
-# Create some useful variables and then limit data to analysis round.
-relevant_player_stats <- player_stats %>%
-  mutate(
-    match_date = as.Date(ymd_hms(utcStartTime)),
-    match_year = year(match_date),
-    match_year_round = as.numeric(paste0(match_year, str_pad(round.roundNumber, 2, pad = "0"))),
-    player.fullName = paste(player.givenName, player.surname)
-  ) 
-
-
-# Beeswarm Chart Preparation
-
-beeswarm_player_stats <- relevant_player_stats %>%
-  filter(match_year_round == round_to_analyse,
-         timeOnGroundPercentage>=25,
-         !is.na(ratingPoints)) %>%
-  select(player.playerId, player.fullName, team.name, ratingPoints) %>%
-  arrange(desc(ratingPoints)) %>%
-  # flag top 5, bottom 5 for the current round
-  mutate(
-    rating_rank = row_number(desc(ratingPoints)),
-    rating_group = case_when(
-      rating_rank <= 5 ~ "Top 5",
-      rating_rank > n() - 5 ~ "Bottom 5",
-      TRUE ~ "Other"
-    )
-  )
-
-### Charts
-
-### HEROES AND ZEROS - Player Rating Analysis and Visuals
-
-### Preamble
-
-# Purpose: 
-
-### Libraries
-library(dplyr)
-library(ggplot2)
-library(tidyr)
-library(lubridate)
-library(stringr)
-library(writexl)
-library(ggbeeswarm)
-library(packcircles)
-library(ggrepel)
-library(fitzRoy)
+#showtext_auto()
+showtext_opts(dpi = 96)
 
 ### Constants and variable initialisation
 round_to_analyse = 202505
@@ -174,11 +108,11 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
   geom_quasirandom(
     aes(fill = rating_group, 
         colour = rating_group,
-        alpha = I(0.75)
+        alpha = I(0.6)
     ),
     method = "quasirandom",
     width = 0.3,
-    size = 4,
+    size = 2,
     stroke = 1,
     shape = 21
   ) +
@@ -186,28 +120,28 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
   scale_x_continuous(breaks = seq(x_min, x_max, by = 5),
                      minor_breaks = NULL,
                      position = "top") +
-  scale_fill_manual(values = rating_colors) +
-  scale_color_manual(values = rating_colors) +
+  scale_fill_manual(values = rating_colours) +
+  scale_color_manual(values = rating_colours) +
   labs(
     title = "<b>Footy Heroes and Zeros</b> <span style='font-weight:300;'>| AFL 2025, Round 5</span>",
     subtitle = "‘Beeswarm’ distribution of <b>AFL player ratings</b> (at least 25% game time), highlighting the <span style='color:#0E6ECE; font-weight:700;'>top 5</span> and <span style='color:#F56580; font-weight:700;'>bottom 5</span> of the round.",
     x = "Player Rating Points",
     color = NULL
   ) +
-  theme_minimal(base_family = "roboto", base_size = 24) +
+  theme_minimal(base_family = "roboto", base_size = 16) +
   theme(
     legend.position = "none",
     axis.text.y = element_blank(),
-    axis.text.x = element_text(size = 24),
-    axis.title.x.top = element_text(size = 24, margin = margin(b = 10)),
+    axis.text.x = element_text(size = 14),
+    axis.title.x.top = element_text(size = 14, margin = margin(b = 5)),
     panel.grid.major.y = element_blank(),
     panel.grid.minor.y = element_blank(),
     panel.grid.major.x = element_line(linewidth = 0.3, linetype = "dotted", colour = "#898989"),
     plot.background = element_rect(fill = "#f5f5f5", colour = NA),
     panel.background = element_rect(fill = "#f5f5f5", colour = NA),
-    plot.margin = margin(t = 30, r = 40, b = 30, l = 40),
-    plot.title = ggtext::element_markdown(size = 44, family = "poppins", margin = margin(b = 6)),
-    plot.subtitle = ggtext::element_markdown(size = 28, family = "roboto", margin = margin(b = 30)),
+    plot.margin = margin(t = 10, r = 20, b = 10, l = 20),
+    plot.title = ggtext::element_markdown(size = rel(1.8), family = "poppins", margin = margin(b = 6), lineheight = 2),
+    plot.subtitle = ggtext::element_markdown(size = rel(1.2), family = "roboto", margin = margin(b = 30), lineheight = 2),
   ) + 
   coord_cartesian(xlim = c(x_min, x_max))
 
@@ -282,3 +216,24 @@ swarm_plot_w_labels <- swarm_plot +
   )
 
 print(swarm_plot_w_labels)
+
+caption_text <- textGrob(
+  label = "Visual: Darragh Murray for Roar Metrics | Data: fitzRoy",
+  x = 1, y = 0,
+  just = c("right", "bottom"),
+  gp = gpar(fontsize = 16, fontfamily = "roboto", col = "grey30")
+)
+
+final_plot <- swarm_plot_w_labels +
+  annotation_custom(caption_text)
+
+print(final_plot)
+
+### Outputs
+ggsave(
+  filename = paste0("heroes_zeros_", round_to_analyse, ".png"),
+  plot = final_plot,
+  width = 10,
+  height = 6,
+  dpi = 300
+)
