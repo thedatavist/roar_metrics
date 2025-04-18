@@ -8,9 +8,10 @@ library(ggbeeswarm)  # for geom_quasirandom()
 library(ggtext)      # for element_markdown()
 library(showtext)    # for Google fonts
 library(grid)        # for arrow() and unit()
+library(glue)
 
 # 1. Fetch data (same as before) -----------------------------------------------
-round_to_analyse <- 202505
+round_to_analyse <- 202504
 seasons          <- 2025
 
 player_stats <- tibble()
@@ -18,6 +19,11 @@ for (season in seasons) {
   season_stats <- fetch_player_stats_afl(season = season)
   player_stats <- bind_rows(player_stats, season_stats)
 }
+
+# pull out the year & round from your data
+current_year  <- round_to_analyse %/% 100
+current_round <- round_to_analyse %% 100
+
 
 # 2. Load & configure fonts ---------------------------------------------------
 font_add_google("Roboto", family = "roboto")
@@ -61,13 +67,13 @@ x_min <- floor(min(beeswarm_player_stats$ratingPoints)/5)*5
 x_max <- ceiling(max(beeswarm_player_stats$ratingPoints)/5)*5
 rating_colours <- c("Top 5"="#0E6ECE","Bottom 5"="#F56580","Other"="#BCBFBE")
 
-# 4. Build plot with tiny fonts -----------------------------------------------
+# Re‐build the beeswarm with a dynamic title
 swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour = rating_group)) +
   geom_quasirandom(
     aes(fill = rating_group, alpha = 0.4),
     method = "quasirandom",
     width  = 0.3,
-    size   = 3,
+    size   = 3.5,
     stroke = 0.8,
     shape  = 21
   ) +
@@ -85,44 +91,42 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
   scale_fill_manual(values = rating_colours) +
   scale_colour_manual(values = rating_colours) +
   labs(
-    title    = "<b>Footy Heroes and Zeros</b> |<span style='font-weight:100;'>AFL 2025, Round 5</span>",
-    subtitle = "Beeswarm distribution of AFL player ratings (≥25% time on ground), highlighting the <span style='color:#0E6ECE;'><b>Top 5</b></span> & <span style='color:#F56580;'><b>bottom 5</b></span> of the round.",
+    title = glue(
+      "<b>Footy Heroes and Zeros</b> |",
+      "<span style='font-weight:100;'>AFL {current_year}, Round {current_round}</span>"
+    ),
+    subtitle = "Beeswarm distribution of AFL player ratings (≥25% time on ground), highlighting the <span style='color:#0E6ECE;'><b>Top 5</b></span> & <span style='color:#F56580;'><b>Bottom 5</b></span> of the round.",
     x        = "Player Rating Points"
   ) +
   theme_minimal(base_family = "roboto", base_size = 12) +
   theme(
-    # Title in Bebas Neue, with extra bottom margin
-    plot.title       = element_markdown(
+    # Title in Bebas Neue, extra bottom margin
+    plot.title = element_markdown(
       size       = 22,
-      family     = "bebas_neue", 
+      family     = "bebas_neue",
       lineheight = 1,
       margin     = margin(b = 5)
     ),
     # Subtitle in Roboto, padded from title
-    plot.subtitle    = element_markdown(
+    plot.subtitle = element_markdown(
       size       = 10,
       family     = "roboto",
       lineheight = 1.1,
       margin     = margin(t = 5, b = 5)
     ),
-    # switch to element_markdown for the caption
-    plot.caption = element_markdown(
-      size   = 6,
-      family = "roboto",
-      colour = "grey50",
-      hjust  = 1
-    ),
-    # Move axis title to bottom, remove top title
+    # Remove swarm’s built‐in caption (we'll add it later)
+    plot.caption       = element_blank(),
+    
+    # Axis styling
     axis.title.x.top    = element_blank(),
     axis.title.x.bottom = element_text(
       size   = 8,
       margin = margin(t = 6, b = 4)
     ),
-    
-    axis.text.x      = element_text(size = 8),
+    axis.text.x         = element_text(size = 8),
     legend.position     = "none",
     
-    # Lighter, slightly thicker gridlines for print
+    # Gridlines for print
     panel.grid.major.x  = element_line(
       linetype = "dotted",
       size     = 0.25,
@@ -136,22 +140,23 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
     plot.background     = element_rect(fill = "#f5f5f5", colour = NA),
     plot.margin         = margin(t = 15, r = 20, b = 15, l = 20)
   ) +
-  coord_cartesian(xlim = c(x_min, x_max))
+  coord_cartesian(xlim = c(x_min, x_max), clip = "off")
+
 
 
 final_plot <- swarm_plot +
   geom_text(
     data        = labelled_players,
     aes(x = ratingPoints, y = y_position*0.5, label = label_text),
-    size        = 3,
-    lineheight  = 1.5,
+    size        = 5,
+    lineheight  = 1,
     family      = "roboto",
     inherit.aes = FALSE,
     colour = labelled_players$segment_colour
   ) +
   geom_curve(
     data       = labelled_players,
-    aes(x = ratingPoints, y = y_position*0.35 - sign(y_position)*0.01,
+    aes(x = ratingPoints, y = y_position*0.35 - sign(y_position)*0.02,
         xend = ratingPoints, yend = 0 + sign(y_position)*0.03),
     curvature = 0.2, arrow = arrow(length = unit(0.02, "npc"), type = "open"),
      size = 0.4, colour = labelled_players$segment_colour, inherit.aes = FALSE
@@ -164,48 +169,62 @@ final_plot
 library(patchwork)
 library(ggtext)
 
+# Extract the Top/Bottom 5 data for the bar charts
+top5_df <- beeswarm_player_stats %>%
+  filter(rating_group == "Top 5") %>%
+  arrange(ratingPoints)
+
+bottom5_df <- beeswarm_player_stats %>%
+  filter(rating_group == "Bottom 5") %>%
+  arrange(desc(ratingPoints))
+
 # compute each extreme
 max_top    <- max(top5_df$ratingPoints)
 min_bottom <- min(bottom5_df$ratingPoints)
 
+
+
 # 1) A new base theme for the little bar panels
 bar_panel_theme <- theme_minimal(base_family = "roboto", base_size = 10) +
   theme(
-    panel.background    = element_rect(fill   = "white", colour = NA),
-    plot.background     = element_rect(
-      fill     = "white",
-      colour   = "#AAAAAA",
-      linetype = "dotted",
-      size     = 0.3
+    # 1) match the swarm background
+    panel.background = element_rect(
+      fill   = "#f5f5f5",
+      colour = NA
     ),
     
-    # POSITION RELATIVE TO PLOT, AND BUMP RIGHT A TAD
+    # 2) darker, heavier dotted border around the whole panel
+    plot.background  = element_rect(
+      fill     = "#f5f5f5",   # same grey so it blends
+      colour   = "#333333",   # darker frame
+      linetype = "dotted",
+      size     = 0.6          # bump up thickness
+    ),
+    
+    # 3) your existing title + y–text tweaks unchanged
     plot.title.position = "plot",
     plot.title          = element_markdown(
       size   = 11,
       family = "roboto",
-      hjust  = 0.03,   # <- shift this number until it lines up
+      hjust  = 0.03,
       margin = margin(t = 5, r = 0, b = 8, l = 0)
     ),
-    
-    # Y labels flush left at the same spot
     axis.text.y         = element_text(
       size   = 9,
       colour = "grey30",
       hjust  = 0,
-      margin = margin(l = 15)  # <- roughly match the hjust offset
+      margin = margin(l = 15)
     ),
     
-    # strip out everything else
+    # 4) strip everything else back out
     axis.title.x        = element_blank(),
     axis.title.y        = element_blank(),
     axis.text.x         = element_blank(),
     axis.ticks.x        = element_blank(),
     panel.grid          = element_blank(),
-    
-    # small white gutter inside the dotted border
-    plot.margin         = margin(t = 5, r = 5, b = 5, l = 5)
+    plot.margin         = margin(t = 5, r = 8, b = 5, l = 8)
   )
+
 
 
 
@@ -292,19 +311,10 @@ ggsave(
   "heroes_zeros_final_boxed.png",
   combined_plot,
   device = ragg::agg_png,
-  width  = 8, height = 8,
+  width  = 10, height = 8,
   units  = "in", dpi = 300
 )
 
 
-# 3) Save out
-ggsave(
-  "heroes_zeros_final_boxed.png",
-  combined_plot,
-  device = ragg::agg_png,
-  width  = 8, 
-  height = 8, 
-  units  = "in", 
-  dpi    = 300
-)
+
 
