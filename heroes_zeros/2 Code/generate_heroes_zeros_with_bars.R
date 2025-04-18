@@ -87,8 +87,7 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
   labs(
     title    = "<b>Footy Heroes and Zeros</b> |<span style='font-weight:100;'>AFL 2025, Round 5</span>",
     subtitle = "Beeswarm distribution of AFL player ratings (≥25% time on ground), highlighting the <span style='color:#0E6ECE;'><b>Top 5</b></span> & <span style='color:#F56580;'><b>bottom 5</b></span> of the round.",
-    x        = "Player Rating Points",
-    caption  = "Visual: Darragh Murray for <span><b>Roar Metrics</b></span> | Data: fitzRoy"
+    x        = "Player Rating Points"
   ) +
   theme_minimal(base_family = "roboto", base_size = 12) +
   theme(
@@ -144,7 +143,7 @@ final_plot <- swarm_plot +
   geom_text(
     data        = labelled_players,
     aes(x = ratingPoints, y = y_position*0.5, label = label_text),
-    size        = 2.5,
+    size        = 3,
     lineheight  = 1.5,
     family      = "roboto",
     inherit.aes = FALSE,
@@ -210,32 +209,35 @@ bar_panel_theme <- theme_minimal(base_family = "roboto", base_size = 10) +
 
 
 
-# 2) Top 5 bar chart
+# 2) Top 5 bar chart: 0 → 120% of max, no extra padding
 top5_bar <- ggplot(top5_df, aes(
   x = ratingPoints,
-  y = fct_reorder(player.fullName, ratingPoints)
+  y = fct_reorder(player.fullName,  -ratingPoints)
 )) +
-  geom_col(fill = rating_colours["Top 5"], width = 0.6) +
+  geom_col(fill = rating_colours["Top 5"], width = 0.4) +
   geom_text(aes(label = sprintf("%.1f", ratingPoints)),
             hjust = -0.1, size = 3, family = "roboto") +
-  scale_x_continuous(expand = expansion(mult = c(0, 0.15))) +
+  scale_x_continuous(
+    limits = c(0, max_top * 1.2),
+    expand = c(0, 0)
+  ) +
   labs(
     title = "<span style='color:#0E6ECE;'><b>Top 5</b></span> players by rating points"
   ) +
   bar_panel_theme
 
-# 3) Bottom 5 bar chart
+# 3) Bottom 5 bar chart: 120% of min negative → 0, no extra padding
 bottom5_bar <- ggplot(bottom5_df, aes(
   x = ratingPoints,
-  y = fct_reorder(player.fullName, -ratingPoints)
+  y = fct_reorder(player.fullName, ratingPoints)
 )) +
-  geom_col(fill = rating_colours["Bottom 5"], width = 0.6) +
+  geom_col(fill = rating_colours["Bottom 5"], width = 0.4) +
   geom_text(aes(label = sprintf("%.1f", ratingPoints)),
             hjust = ifelse(bottom5_df$ratingPoints < 0, 1.1, -0.1),
             size = 3, family = "roboto") +
   scale_x_continuous(
     limits = c(min_bottom * 1.2, 0),
-    expand = expansion(mult = c(0, 0.02))
+    expand = c(0, 0)
   ) +
   labs(
     title = "<span style='color:#F56580;'><b>Bottom 5</b></span> players by rating points"
@@ -263,22 +265,37 @@ bars_row <- wrap_plots(
   widths = c(0.1, 1, 0.1, 1, 0.1)
 )
 
-# 2) Now stack the swarm over the bars row
+# 4) Stack swarm + bars and then add the overall caption
 combined_plot <- wrap_plots(
   final_plot,
   bars_row,
   ncol    = 1,
-  heights = c(3, 1.5)    # tweak as needed
-) + 
+  heights = c(3, 1.5)
+) +   # <— this plus binds the next call onto the wrap_plots result
   plot_annotation(
+    caption = "Visual: Darragh Murray for Roar Metrics | Data: fitzRoy",
     theme = theme(
-      plot.background = element_rect(fill = "#f5f5f5", colour = NA),
-      plot.margin     = margin(t = 15, r = 20, b = 40, l = 20)
+      plot.caption    = element_markdown(
+        size   = 6,
+        family = "roboto",
+        colour = "grey50",
+        hjust  = 1
+      ),
+      plot.background = element_rect(fill   = "#f5f5f5", colour = NA),
+      plot.margin     = margin(t = 15, r = 20, b = 20, l = 20)
     )
   )
 
-# Preview
-combined_plot
+# Preview & save
+
+ggsave(
+  "heroes_zeros_final_boxed.png",
+  combined_plot,
+  device = ragg::agg_png,
+  width  = 8, height = 8,
+  units  = "in", dpi = 300
+)
+
 
 # 3) Save out
 ggsave(
