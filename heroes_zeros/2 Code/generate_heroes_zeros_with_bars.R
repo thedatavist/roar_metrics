@@ -163,179 +163,120 @@ final_plot
 
 # BAR CHARTS -----
 library(patchwork)
+library(ggtext)
 
 # compute each extreme
 max_top    <- max(top5_df$ratingPoints)
 min_bottom <- min(bottom5_df$ratingPoints)
 
-# ───────────────────────────────────────────────────────────────────────────────
-# 1. Update your bar‐chart theme so panels are #f5f5f5, not white
-# ───────────────────────────────────────────────────────────────────────────────
-base_bar_theme <- theme_minimal(base_family = "roboto", base_size = 8) +
+# 1) A new base theme for the little bar panels
+bar_panel_theme <- theme_minimal(base_family = "roboto", base_size = 10) +
   theme(
-    # keep the grey fill behind the geoms…
-    panel.background = element_rect(fill   = "#f5f5f5", colour = NA),
-    # …and draw your dotted border around the _whole_ ggplot object
+    # white fill for the panel
+    panel.background = element_rect(fill = "white", colour = NA),
+    # dotted border around the *entire* panel
     plot.background  = element_rect(
-      fill     = "#f5f5f5",       # same grey so it blends
-      colour   = "#AAAAAA",       # border colour
-      size     = 0.25,            # line thickness
-      linetype = "dotted"
+      fill     = "white",
+      colour   = "#AAAAAA",
+      linetype = "dotted",
+      size     = 0.3
     ),
-    # axis/text styling
-    axis.title       = element_blank(),
+    # styled title allowing coloured & bold text
+    plot.title       = element_markdown(
+      size   = 11,
+      family = "roboto",
+      margin = margin(b = 8)
+    ),
+    # remove axes and grid
+    axis.title.x     = element_blank(),
+    axis.title.y     = element_blank(),
     axis.text.x      = element_blank(),
     axis.ticks.x     = element_blank(),
-    axis.text.y      = element_text(size = 7, hjust = 1),
-    # remove the old panel.border
-    panel.border     = element_blank(),
     panel.grid       = element_blank(),
-    # small internal margin so the axes/titles don’t butt the border
-    plot.margin      = margin(t = 6, r = 6, b = 6, l = 6)
-  )
-# ───────────────────────────────────────────────────────────────────────────────
-# Bottom 5 bar: extend axis to 1.1× the most negative value
-# ───────────────────────────────────────────────────────────────────────────────
-bottom5_bar <- ggplot(bottom5_df, aes(
-  x = reorder(player.fullName, ratingPoints),
-  y = ratingPoints
-)) +
-  geom_col(fill = rating_colours["Bottom 5"], width = 0.3) +
-  geom_text(
-    aes(
-      label = sprintf("%.1f", ratingPoints),
-      hjust  = ifelse(ratingPoints < 0, 1.1, -0.1)
-    ),
-    size   = 2,
-    family = "roboto"
-  ) +
-  coord_flip(expand = FALSE) +
-  scale_y_continuous(
-    limits = c(min_bottom * 1.2, 0),    # ← stretch left to 110% of the worst drop
-    expand = c(0, 0)
-  ) +
-  labs(title = "Bottom 5 | Details") +
-  base_bar_theme +
-  theme(plot.margin = margin(5, 5, 5, 5)) +
-  theme(plot.title = element_markdown(size   = 8,
-                                      family = "roboto",
-                                      margin = margin(b = 2)))
-
-bottom5_bar <- bottom5_bar +
-  theme(
-    plot.title = element_markdown(
-      size   = 8,
-      family = "roboto",
-      margin = margin(t = 8, b = 2)  # 8pt above, 2pt below
-    )
+    # y‐axis labels (player names)
+    axis.text.y      = element_text(size = 9, colour = "grey30"),
+    # a small internal margin so nothing butt the dotted line
+    plot.margin      = margin(t = 5, r = 5, b = 5, l = 5)
   )
 
-# ───────────────────────────────────────────────────────────────────────────────
-# Top 5 bar: extend axis to 1.1× the best score
-# ───────────────────────────────────────────────────────────────────────────────
+# 2) Top 5 bar chart
 top5_bar <- ggplot(top5_df, aes(
-  x = reorder(player.fullName, -ratingPoints),
-  y = ratingPoints
+  x = ratingPoints,
+  y = fct_reorder(player.fullName, ratingPoints)
 )) +
-  geom_col(fill = rating_colours["Top 5"], width = 0.3) +
-  geom_text(
-    aes(
-      label = sprintf("%.1f", ratingPoints),
-      hjust  = ifelse(ratingPoints < 0, 1.1, -0.1)
-    ),
-    size   = 2.5,
-    family = "roboto"
+  geom_col(fill = rating_colours["Top 5"], width = 0.6) +
+  geom_text(aes(label = sprintf("%.1f", ratingPoints)),
+            hjust = -0.1, size = 3, family = "roboto") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.15))) +
+  labs(
+    title = "<span style='color:#0E6ECE;'><b>Top 5</b></span> players by rating points"
   ) +
-  coord_flip(expand = FALSE) +
-  scale_y_continuous(
-    limits = c(0, max_top * 1.2),      # ← stretch right to 110% of the best haul
-    expand = c(0, 0)
+  bar_panel_theme
+
+# 3) Bottom 5 bar chart
+bottom5_bar <- ggplot(bottom5_df, aes(
+  x = ratingPoints,
+  y = fct_reorder(player.fullName, -ratingPoints)
+)) +
+  geom_col(fill = rating_colours["Bottom 5"], width = 0.6) +
+  geom_text(aes(label = sprintf("%.1f", ratingPoints)),
+            hjust = ifelse(bottom5_df$ratingPoints < 0, 1.1, -0.1),
+            size = 3, family = "roboto") +
+  scale_x_continuous(
+    limits = c(min_bottom * 1.2, 0),
+    expand = expansion(mult = c(0, 0.02))
   ) +
-  labs(title = "Top 5 | Details") +
-  base_bar_theme +
-  theme(plot.margin = margin(5, 5, 5, 5)) +
-  theme(plot.title = element_markdown(size   = 8,
-                                      family = "roboto",
-                                      margin = margin(b = 2)))
+  labs(
+    title = "<span style='color:#F56580;'><b>Bottom 5</b></span> players by rating points"
+  ) +
+  bar_panel_theme
 
-top5_bar <- top5_bar +
-  theme(
-    plot.title = element_markdown(
-      size   = 8,
-      family = "roboto",
-      margin = margin(t = 8, b = 2)
-    )
-  )
-# ───────────────────────────────────────────────────────────────────────────────
-# Combine & save exactly as before
-# ───────────────────────────────────────────────────────────────────────────────
-combined_plot <- wrap_plots(
-  final_plot,
-  
-  grey_spacer +
-    bottom5_bar +
-    grey_spacer +
-    top5_bar +
-    grey_spacer +
-    plot_layout(
-      ncol   = 5,
-      widths = c(0.1, 0.9, 0.1, 0.9, 0.1)
-    ),
-  
-  ncol    = 1,
-  heights = c(3, 1.8)   # <-- increase from 1.2 up to 1.8 (or 2.0)
-) +
-  plot_annotation(
-    theme = theme(
-      plot.margin     = margin(t = 15, r = 20, b = 40, l = 20),
-      plot.background = element_rect(fill = "#f5f5f5", colour = NA)
-    )
-  )
-
-
-
-# 1) Create a "grey spacer" panel instead of plot_spacer()
 grey_spacer <- ggplot() +
   theme_void() +
   theme(
-    panel.background = element_rect(fill = "#f5f5f5", colour = NA),
-    plot.background  = element_rect(fill = "#f5f5f5", colour = NA)
+    panel.background = element_rect(fill   = "#f5f5f5", colour = NA),
+    plot.background  = element_rect(fill   = "#f5f5f5", colour = NA)
   )
 
-# 2) Combine everything, using grey_spacer in place of plot_spacer()
+
+# 4) Patchwork them in under your swarm
+# 1) Build the bars row in one go
+bars_row <- wrap_plots(
+  # left margin | bottom5 | gutter | top5 | right margin
+  grey_spacer, 
+  bottom5_bar, 
+  grey_spacer, 
+  top5_bar, 
+  grey_spacer,
+  ncol   = 5,
+  widths = c(0.1, 1, 0.1, 1, 0.1)
+)
+
+# 2) Now stack the swarm over the bars row
 combined_plot <- wrap_plots(
   final_plot,
-  
-  # row 2: left margin | bottom5 | small gap | top5 | right margin
-  grey_spacer +
-    bottom5_bar +
-    grey_spacer +
-    top5_bar +
-    grey_spacer +
-    plot_layout(ncol   = 5,
-                widths = c(0.1, 1, 0.05, 1, 0.1)),
-  
+  bars_row,
   ncol    = 1,
-  heights = c(3, 1.2)
-) +
-  # 3) add extra bottom padding so bars never hit the canvas border
+  heights = c(3, 1.5)    # tweak as needed
+) + 
   plot_annotation(
     theme = theme(
-      plot.margin = margin(t = 15, r = 20, b = 40, l = 20),
-      plot.background = element_rect(fill = "#f5f5f5", colour = NA)
+      plot.background = element_rect(fill = "#f5f5f5", colour = NA),
+      plot.margin     = margin(t = 15, r = 20, b = 40, l = 20)
     )
   )
 
-# 4) Preview & save
+# Preview
 combined_plot
 
+# 3) Save out
 ggsave(
-  "heroes_zeros_final_padded.png",
-  plot   = combined_plot,
+  "heroes_zeros_final_boxed.png",
+  combined_plot,
   device = ragg::agg_png,
-  width  = 8,
-  height = 8,
-  units  = "in",
+  width  = 8, 
+  height = 8, 
+  units  = "in", 
   dpi    = 300
 )
 
