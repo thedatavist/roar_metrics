@@ -172,32 +172,43 @@ min_bottom <- min(bottom5_df$ratingPoints)
 # 1) A new base theme for the little bar panels
 bar_panel_theme <- theme_minimal(base_family = "roboto", base_size = 10) +
   theme(
-    # white fill for the panel
-    panel.background = element_rect(fill = "white", colour = NA),
-    # dotted border around the *entire* panel
-    plot.background  = element_rect(
+    panel.background    = element_rect(fill   = "white", colour = NA),
+    plot.background     = element_rect(
       fill     = "white",
       colour   = "#AAAAAA",
       linetype = "dotted",
       size     = 0.3
     ),
-    # styled title allowing coloured & bold text
-    plot.title       = element_markdown(
+    
+    # POSITION RELATIVE TO PLOT, AND BUMP RIGHT A TAD
+    plot.title.position = "plot",
+    plot.title          = element_markdown(
       size   = 11,
       family = "roboto",
-      margin = margin(b = 8)
+      hjust  = 0.03,   # <- shift this number until it lines up
+      margin = margin(t = 5, r = 0, b = 8, l = 0)
     ),
-    # remove axes and grid
-    axis.title.x     = element_blank(),
-    axis.title.y     = element_blank(),
-    axis.text.x      = element_blank(),
-    axis.ticks.x     = element_blank(),
-    panel.grid       = element_blank(),
-    # y‐axis labels (player names)
-    axis.text.y      = element_text(size = 9, colour = "grey30"),
-    # a small internal margin so nothing butt the dotted line
-    plot.margin      = margin(t = 5, r = 5, b = 5, l = 5)
+    
+    # Y labels flush left at the same spot
+    axis.text.y         = element_text(
+      size   = 9,
+      colour = "grey30",
+      hjust  = 0,
+      margin = margin(l = 15)  # <- roughly match the hjust offset
+    ),
+    
+    # strip out everything else
+    axis.title.x        = element_blank(),
+    axis.title.y        = element_blank(),
+    axis.text.x         = element_blank(),
+    axis.ticks.x        = element_blank(),
+    panel.grid          = element_blank(),
+    
+    # small white gutter inside the dotted border
+    plot.margin         = margin(t = 5, r = 5, b = 5, l = 5)
   )
+
+
 
 # 2) Top 5 bar chart
 top5_bar <- ggplot(top5_df, aes(
