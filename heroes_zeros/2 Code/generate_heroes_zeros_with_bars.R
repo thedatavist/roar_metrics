@@ -11,7 +11,7 @@ library(grid)        # for arrow() and unit()
 library(glue)
 
 # 1. Fetch data (same as before) -----------------------------------------------
-round_to_analyse <- 202504
+round_to_analyse <- 202505
 seasons          <- 2025
 
 player_stats <- tibble()
@@ -102,7 +102,7 @@ swarm_plot <- ggplot(beeswarm_player_stats, aes(x = ratingPoints, y = 0, colour 
   theme(
     # Title in Bebas Neue, extra bottom margin
     plot.title = element_markdown(
-      size       = 22,
+      size       = 28,
       family     = "bebas_neue",
       lineheight = 1,
       margin     = margin(b = 5)
