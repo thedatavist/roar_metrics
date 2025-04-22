@@ -11,7 +11,7 @@ library(grid)        # for arrow() and unit()
 library(glue)
 
 # 1. Fetch data (same as before) -----------------------------------------------
-round_to_analyse <- 202505
+round_to_analyse <- 202506
 seasons          <- 2025
 
 player_stats <- tibble()
@@ -38,7 +38,8 @@ relevant_player_stats <- player_stats %>%
     match_year       = year(match_date),
     match_year_round = as.numeric(paste0(match_year, str_pad(round.roundNumber,2,pad = "0"))),
     player.fullName  = paste(player.givenName, player.surname)
-  )
+  ) %>%
+  filter(match_year_round == round_to_analyse)
 
 beeswarm_player_stats <- relevant_player_stats %>%
   filter(match_year_round == round_to_analyse,
@@ -162,7 +163,6 @@ final_plot <- swarm_plot +
      size = 0.4, colour = labelled_players$segment_colour, inherit.aes = FALSE
   )
 
-final_plot 
 
 
 # BAR CHARTS -----
@@ -304,6 +304,58 @@ combined_plot <- wrap_plots(
       plot.margin     = margin(t = 15, r = 20, b = 20, l = 20)
     )
   )
+
+
+# Top 10
+
+# 1. Aggregate total rating points across the season
+top10_total_ratings <- player_stats %>%
+  filter(!is.na(ratingPoints)) %>%
+  group_by(player.fullName = paste(player.givenName, player.surname)) %>%
+  summarise(total_rating = sum(ratingPoints, na.rm = TRUE)) %>%
+  arrange(desc(total_rating)) %>%
+  slice_head(n = 10)
+
+# 2. Plot the bar chart
+top10_bar_plot <- ggplot(top10_total_ratings, aes(
+  x = total_rating,
+  y = fct_reorder(player.fullName, total_rating)
+)) +
+  geom_col(fill = "#0E6ECE", width = 0.5) +
+  geom_text(
+    aes(label = sprintf("%.1f", total_rating)),
+    hjust = -0.1,
+    size = 3,
+    family = "roboto"
+  ) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(
+    title = "<b>Total AFL Player Ratings</b> | <span style='font-weight:100;'>Top 10 players this season</span>",
+    x = "Total Rating Points",
+    y = NULL
+  ) +
+  theme_minimal(base_family = "roboto", base_size = 10) +
+  theme(
+    plot.title = element_markdown(
+      size = 14,
+      family = "bebas_neue",
+      margin = margin(b = 10)
+    ),
+    axis.text.y = element_text(
+      size = 9,
+      colour = "grey30",
+      hjust = 0
+    ),
+    axis.title.x = element_text(size = 9, margin = margin(t = 8)),
+    panel.grid.major.y = element_blank(),
+    panel.grid.major.x = element_line(size = 0.3, colour = "#CCCCCC", linetype = "dotted"),
+    panel.background = element_rect(fill = "#f5f5f5", colour = NA),
+    plot.background  = element_rect(fill = "#f5f5f5", colour = NA),
+    plot.margin = margin(t = 15, r = 20, b = 15, l = 20)
+  )
+
+# Show the plot
+top10_bar_plot
 
 # Preview & save
 

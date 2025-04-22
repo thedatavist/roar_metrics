@@ -1,0 +1,23 @@
+position,position_description,position_classification
+BPL,Back Pocket Left,Defenders
+BPR,Back Pocket Right,Defenders
+CHB,Centre Half Back,Defenders
+FB,Full Back,Defenders
+HBFL,Half Back Flank Left,Defenders
+HBFR,Half Back Flank Right,Defenders
+EMERG,Emergency,Emergency
+NA,Missing Data,Missing Data
+CHF,Centre Half Forward,Forwards
+FF,Full Forward,Forwards
+FPL,Forward Pocket Left,Forwards
+FPR,Forward Pocket Right,Forwards
+HFFL,Half Forward Flank Left,Forwards
+HFFR,Half Forward Flank Right,Forwards
+INT,Interchange,Interchange
+SUB,Substitute,Interchange
+C,Centre,Midfielders
+R,Rover,Midfielders
+RK,Ruck,Midfielders
+RR,Ruck Rover,Midfielders
+WL,Wing Left,Midfielders
+WR,Wing Right,Midfielders
